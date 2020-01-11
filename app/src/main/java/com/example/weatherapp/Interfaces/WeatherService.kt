@@ -1,4 +1,4 @@
-package com.example.weatherapp.Retrofit
+package com.example.weatherapp.Interfaces
 
 import WeatherDataClass
 import io.reactivex.Observable
