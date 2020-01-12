@@ -1,5 +1,6 @@
 package com.example.weatherapp
 
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.R.interpolator.linear
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -12,6 +13,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.example.weatherapp.Interfaces.WeatherService
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -21,8 +23,10 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jsoup.Jsoup
+import java.security.Permission
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.jar.Manifest
 
 
 class MainActivity : AppCompatActivity() {
@@ -44,6 +48,17 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        var permissionCheck =
+            checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (permissionCheck != 0) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.ACCESS_COARSE_LOCATION),
+                99
+            )
+            recreate()
+        }
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location: Location? ->
@@ -59,13 +74,18 @@ class MainActivity : AppCompatActivity() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     {
-                        textView2.text =
-                            it.now_dt.substring(0, 10) + " " + it.now_dt.substring(12, 16)
+                        textView2.text = getTimeStamp(it.now * 1000)
                         Vtemperature.text = it.fact.temp.toString() + "℃"
                         userUrl = it.info.url
                         it.forecasts[0].hours.forEach {
-                            addHour(it.hour.toString(), it.temp.toString(),it.condition)
+                            addHour(it.hour.toString(), it.temp.toString(), it.condition)
                         }
+                        feels_like.text = "Ощущаемая температура:" + it.fact.feels_like.toString()
+                        wind_speed.text = "Скорость ветра:" + it.fact.wind_speed.toString()
+                        pressure_mm.text = "Давление:" + it.fact.pressure_mm.toString()
+                        humidity.text = "Влажность воздуха:" + it.fact.humidity.toString()
+                        sunrise.text = "Время восхода Солнца:" + it.forecasts[0].sunrise.toString()
+                        sunset.text = "Время заката Солнца:" + it.forecasts[0].sunset.toString()
 
                         getCityName(userUrl)
                             .subscribeOn(Schedulers.io())
@@ -94,7 +114,7 @@ class MainActivity : AppCompatActivity() {
         return date
     }
 
-    fun addHour(hour: String, temperature: String,icon:String) {
+    fun addHour(hour: String, temperature: String, icon: String) {
         var linearVToAdd = findViewById<LinearLayout>(R.id.VHours)
         val newLinearLayout = LinearLayout(this)
         newLinearLayout.orientation = LinearLayout.VERTICAL
@@ -197,5 +217,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+
 }
 
